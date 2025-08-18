@@ -1,0 +1,15 @@
+{
+  "name": "slack-todo-bot",
+  "version": "1.0.0",
+  "description": "Slack TODO reminder bot",
+  "main": "api/slack.js",
+  "scripts": {
+    "start": "node api/slack.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.17.1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
