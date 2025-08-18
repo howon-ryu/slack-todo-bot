@@ -2,12 +2,13 @@ const { App, ExpressReceiver } = require('@slack/bolt');
 
 // Express receiver 사용 (Vercel용)
 const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
-  endpoints: '/api/slack'
+  signingSecret: process.env.SLACK_SIGNING_SECRET || 'dummy-secret',
+  endpoints: '/api/slack',
+  processBeforeResponse: true
 });
 
 const app = new App({
-  token: process.env.SLACK_BOT_TOKEN,
+  token: process.env.SLACK_BOT_TOKEN || 'dummy-token',
   receiver
 });
 
@@ -123,6 +124,16 @@ app.command('/check_reminders', async ({ command, ack, respond }) => {
       await sendOverdueReminder(task);
     }
   }
+});
+
+// 에러 핸들링 추가
+app.error(async (error) => {
+  console.error('App error:', error);
+});
+
+// 기본 라우트 추가 (테스트용)
+receiver.app.get('/api/slack', (req, res) => {
+  res.json({ message: 'Slack bot is running!', timestamp: new Date().toISOString() });
 });
 
 // Vercel 서버리스 함수로 export
