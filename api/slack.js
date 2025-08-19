@@ -131,6 +131,50 @@ app.error(async (error) => {
   console.error('App error:', error);
 });
 
+// 스케줄러용 자동 체크 엔드포인트
+receiver.app.post('/api/slack', async (req, res) => {
+  // GitHub Actions에서 오는 요청 처리
+  if (req.body && req.body.event && req.body.event.user === 'SYSTEM_SCHEDULER') {
+    console.log('🤖 GitHub Actions 스케줄러에서 자동 체크 요청');
+    
+    if (currentTodos && currentTodos.length > 0) {
+      const overdueTasks = getOverdueTasks(currentTodos);
+      
+      if (overdueTasks.length > 0) {
+        console.log(`📋 ${overdueTasks.length}개의 마감 지연 작업 발견`);
+        
+        // 각 담당자에게 DM 전송
+        for (const task of overdueTasks) {
+          await sendOverdueReminder(task);
+        }
+        
+        res.json({ 
+          success: true, 
+          message: `${overdueTasks.length}개의 마감 지연 알림을 전송했습니다.`,
+          tasks: overdueTasks.length
+        });
+      } else {
+        console.log('✅ 마감일이 지난 작업이 없습니다.');
+        res.json({ 
+          success: true, 
+          message: '마감일이 지난 작업이 없습니다.',
+          tasks: 0
+        });
+      }
+    } else {
+      console.log('📝 등록된 TODO 리스트가 없습니다.');
+      res.json({ 
+        success: false, 
+        message: '등록된 TODO 리스트가 없습니다.' 
+      });
+    }
+    return;
+  }
+  
+  // 기존 슬랙 이벤트 처리는 그대로
+  res.status(200).end();
+});
+
 // 기본 라우트 추가 (테스트용)
 receiver.app.get('/api/slack', (req, res) => {
   res.json({ message: 'Slack bot is running!', timestamp: new Date().toISOString() });

@@ -1,0 +1,40 @@
+name: Daily Reminder Check
+
+on:
+  schedule:
+    # 매일 한국시간 오전 9시 30분 (UTC 00:30)
+    - cron: '30 0 * * *'
+  
+  # 수동 실행도 가능하게 설정
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check for overdue tasks
+        run: |
+          echo "🔍 마감일 지난 작업들을 확인합니다..."
+          
+          # Vercel 함수를 호출해서 리마인더 체크 실행
+          response=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "type": "event_callback",
+              "event": {
+                "type": "app_mention",
+                "text": "/check_reminders",
+                "user": "SYSTEM_SCHEDULER",
+                "channel": "SCHEDULER"
+              }
+            }' \
+            https://slack-todo-bot.vercel.app/api/slack)
+          
+          echo "📤 응답: $response"
+          echo "✅ 자동 리마인더 체크 완료!"
+      
+      - name: Log execution time
+        run: |
+          echo "⏰ 실행 시간: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🇰🇷 한국 시간: $(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S KST')"
